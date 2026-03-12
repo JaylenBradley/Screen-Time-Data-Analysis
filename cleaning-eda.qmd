@@ -1,0 +1,124 @@
+---
+title: "cleaning-eda"
+format: html
+editor: visual
+---
+
+# Data cleaning & Preliminary EDA
+
+## Data Provenance
+
+> This data was collected via a survey on 400 participants that was conducted by Adharshini Kumaresan around 6 months ago. It captures how their daily screen usage relates to mental wellness. Unfortunately, their page on Kaggle has very limited information about the sets provenance.
+>
+> [Dataset](https://www.kaggle.com/datasets/adharshinikumar/screentime-vs-mentalwellness-survey-2025)
+
+```{r}
+#| warning: false
+#| message: false
+
+library(tidyverse)
+library(ggplot2)
+
+screen_time_data = read_csv("./project/data/ScreenTime-vs-MentalWellness.csv")
+View(screen_time_data)
+```
+
+> Variable names are already cleaned
+
+```{r}
+# Dropping random column that gets generated when data is loaded
+screen_time_data = screen_time_data |> 
+  select(-"...16")
+```
+
+## Data Visualization
+
+```{r}
+screen_time_data |> 
+  ggplot(aes(x = age)) +
+  geom_histogram(binwidth = 1)
+```
+
+> The average of participants age seems to be between 20s to late 30s, an age range where screen time would likely be much higher. There aren't a lot of teens and no one below the age of 16 so we can't apply our findings to children
+
+```{r}
+screen_time_data |> 
+  ggplot(aes(x = gender)) +
+  geom_bar()
+```
+
+> There are more females than males in this dataset which may skew results when considering gender since it's not a simple 50/50 split
+
+```{r}
+screen_time_data |> 
+  ggplot(aes(x = occupation)) +
+  geom_bar()
+```
+
+> More employed people than every other category combined (likely do to age range). Might have an impact on later findings
+
+```{r}
+screen_time_data |> 
+  ggplot(aes(x = work_mode)) +
+  geom_bar()
+```
+
+> Nothing super significant about this. Might just be a nice feature to evaluate later
+
+```{r}
+screen_time_data |> 
+  ggplot(aes(x = screen_time_hours)) +
+  geom_histogram(binwidth = 0.4)
+```
+
+> The average daily screen time is aroud 8-10 hours which we find crazy. It's important to note that screen time for this dataset all devices (mobile, laptop, TV, total). The next two features/variables are important to break this information down
+
+```{r}
+screen_time_data |> 
+  ggplot(aes(x = work_screen_hours)) +
+  geom_histogram(binwidth = 0.4)
+```
+
+> Work screen time hours is very much skewed right with an average of approximatley 0-2. This includes daily screen time spent onwork/study tasks
+
+```{r}
+screen_time_data |> 
+  ggplot(aes(x = leisure_screen_hours)) +
+  geom_histogram(binwidth = 0.4)
+```
+
+> Leisure screen time hours have an average around 7 hours per day. This includes social media, streaming, gaming, etc.
+
+```{r}
+screen_time_data |> 
+  ggplot(aes(x = sleep_hours)) +
+  geom_histogram(binwidth = 0.3)
+```
+
+> The average sleep duration per night is around 7 hours
+
+```{r}
+screen_time_data |> 
+  ggplot(aes(x = social_hours_per_week)) +
+  geom_histogram(binwidth = 1)
+```
+
+> This variable is only including socializing hours offline per week (so this wouldn't incude playing video games with friends). It's shocking how high the count of 0 hours is and it will be interesting to see if this has any negative correlations to any other variables
+
+```{r}
+screen_time_data |> 
+  ggplot(aes(x = exercise_minutes_per_week)) +
+  geom_histogram(binwidth = 10)
+```
+
+> This variable is skewed right with an average around approximately 100 minutes per week
+
+## Factoring & Re-ordering
+
+```{r}
+screen_time_data = screen_time_data |> 
+  mutate(occupation = factor(occupation, levels = c("Unemployed", "Student", "Self-employed", "Employed", "Retired")))
+
+screen_time_data = screen_time_data |> 
+  mutate(work_mode = factor(work_mode, levels = c("Remote", "Hybrid", "In-person")))
+```

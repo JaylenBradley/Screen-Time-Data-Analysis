@@ -1,0 +1,88 @@
+---
+title: "Project-Proposal"
+author: Jaylen
+format: html
+editor: visual
+---
+
+```{r}
+#| warning: false
+#| message: false
+library(tidyverse) 
+```
+
+# Dataset 1: Screen Time, Sleep & Stress Analysis
+
+#### [Kaggle](https://www.kaggle.com/datasets/amar5693/screen-time-sleep-and-stress-analysis-dataset)
+
+> This data was originally collected by Amar Tiwari and is synthetically generated for research, educational, and machine learning experimentation purposes. The data isn't representative of real individuals, however values were generated within realistic behavioral ranges to simulate real-world smartphone usage and productivity patterns
+>
+> Who: the subjects of the study are simulated people who use smartphones
+>
+> When: the data was created synthetically
+>
+> Where: the data was created synthetically
+>
+> Observations: 50000
+>
+> Variables: 13 (12 excluding user ID)
+>
+> Summary: screen time, sleep, stress, gender, age, etc.
+
+## Research Questions
+
+> 1.  To what extent does screen time impact stress, productivity, sleep and potentially caffeine intake?
+>
+>     -   Explanatory Variables: Daily phone hours, weekend screen time hours, app usage count, social media hours
+>
+>     -   Response Variables: Sleep hours, work productivity score, caffeine intake, stress level
+>
+> 2.  Does the type of device impact a users screen time and sleep?
+>
+>     -   Explanatory Variables: Device type
+>
+>     -   Response Variables: Daily phone hours, weekend screen time hours, sleep hours
+
+```{r}
+screentime_data = read.csv("data/Smartphone_Usage_Productivity_Dataset_50000.csv")
+glimpse(screentime_data)
+```
+
+# Dataset 2: Resume Data
+
+#### [Kaggle](https://www.kaggle.com/datasets/saugataroyarghya/resume-dataset)
+
+> This dataset, curated and processed by Neuralframe AI. The author is Saugata Roy Arghya
+>
+> Who: people who have submitted their resumes to companies or have posted them online publicly
+>
+> -   There was alleged explicit consent from the contributors
+>
+> When: the data was created synthetically
+>
+> Where: the data was curated by Neuralframe AI using both open-source data and proprietary company data
+>
+> Observations: 9544
+>
+> Variables: 35
+>
+> Summary: includes information on career objectives, skills, education, work experience, certifications, and other relevant details pertaining to a persons resume
+
+## Research Questions
+
+> 1.  What information on a person's resume contributed the most to their match score for a specific job?
+>
+>     -   Explanatory Variables: Skills, institution, degree names, major(s), positions, etc.
+>
+>     -   Response Variables: Matched score
+>
+> 2.  What is the average experience of candidates that have a job in their major?
+>
+>     -   Explanatory Variables: Major field of study, positions, skills, experience requirement, skills required
+>
+>     -   Response Variables: Role positions, job position name
+
+```{r}
+resume_data = read.csv("data/resume_data.csv")
+glimpse(resume_data)
+```
