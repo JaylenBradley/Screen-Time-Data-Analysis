@@ -123,6 +123,12 @@ screen_time_data = screen_time_data |>
   mutate(work_mode = factor(work_mode, levels = c("Remote", "Hybrid", "In-person")))
 ```
 
+## Exporting Cleaned Data
+
+```{r}
+write_rds(screen_time_data, "./data/cleaned_screen_time_data.rds")
+```
+
 ## Investigating & Handling Missing Data
 
 ```{r}
