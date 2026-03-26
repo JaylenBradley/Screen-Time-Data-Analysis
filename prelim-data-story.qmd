@@ -1,0 +1,80 @@
+---
+title: "prelim-data-story"
+format: html
+editor: visual
+---
+
+## Data Story
+
+### Load Packages and Data
+
+```{r, message=False, warning=False}
+library(tidyverse)
+library(ggplot2)
+cleaned_screen_time_data = readRDS("./data/cleaned_screen_time_data.rds")
+#View(cleaned_screen_time_data)
+```
+
+Visualizations
+
+1. Age vs Screen Time *
+
+```{r}
+
+```
+
+2. Mental Wellness Index *
+
+```{r}
+
+```
+
+3. Productivity vs Stress *
+
+```{r}
+
+```
+
+4. Sleep Hours vs Sleep Quality *
+
+```{r}
+
+```
+
+5. Work vs Leisure Screen Time
+
+```{r}
+
+```
+
+6. Occupation vs Screen Time
+
+```{r}
+
+```
+
+7. Exercise Time vs Mental Wellness
+
+```{r}
+
+```
+
+8. Exercise Time vs Stress Level
+
+```{r}
+
+```
+
+# Visualizations Using Models
+
+9. Predicting Screen Time Hours *
+
+```{r}
+
+```
+
+10. Predicting Mental Wellness
+
+```{r}
+
+```
