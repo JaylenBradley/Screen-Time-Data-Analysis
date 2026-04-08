@@ -1,80 +1,216 @@
 ---
 title: "prelim-data-story"
-format: html
+date: today
+format: 
+  html:
+    self-contained: true
+    toc: true
+    toc_float: true
+    number_section: false
+    highlight: "tango"
+    theme: "cosmo"
 editor: visual
+editor_options: 
+  chunk_output_type: console
 ---
 
-## Data Story
+# Data Story
 
 ### Load Packages and Data
 
-```{r, message=False, warning=False}
+```{r, message=FALSE, warning=FALSE}
 library(tidyverse)
 library(ggplot2)
+library(ggcorrplot)
+library(olsrr)
 cleaned_screen_time_data = readRDS("./data/cleaned_screen_time_data.rds")
 #View(cleaned_screen_time_data)
 ```
 
-Visualizations
+## Visualizations
 
-1. Age vs Screen Time *
-
-```{r}
-
-```
-
-2. Mental Wellness Index *
+1.  Age vs Screen Time
 
 ```{r}
-
+cleaned_screen_time_data |> 
+  ggplot(aes(x = age, y = screen_time_hours)) +
+  geom_point() +
+  labs(
+    x = "Age",
+    y = "Screen Time Hours",
+    title = "Screen Time in Relation to Age"
+  )
 ```
 
-3. Productivity vs Stress *
+> This visual shows how age relates to screen time hours. Unfortunately, there doesn't seem to be a correlation on its own (just using age). Of note, screen time hours is a combination of work and leisure screen time so this may cause the non-visible relation
+
+2.  Mental Wellness Index
 
 ```{r}
-
+cleaned_screen_time_data |> 
+  ggplot(aes(x = mental_wellness_index_0_100)) +
+  geom_histogram(binwidth = 5) +
+  labs(
+    x = "Mental Wellness Index",
+    y = "Count"
+  )
 ```
 
-4. Sleep Hours vs Sleep Quality *
+> Mental wellness is generally low for the people in this dataset. This matters because we can investigate what causes low wellness and if screen time is a major factor or if it has a relation
+
+3.  Productivity vs Stress
 
 ```{r}
-
+cleaned_screen_time_data |> 
+  ggplot(aes(x = productivity_0_100, y = stress_level_0_10)) +
+  geom_point() +
+  labs(
+    x = "Productivity",
+    y = "Stress Level",
+    title = "Stress in Relation to Productivity"
+  )
 ```
 
-5. Work vs Leisure Screen Time
+> Stress has a negative impact on productivity. This matters because we now know that high stress leads to low productivity and can see if stress or screen time has a bigger impact on productivity levels
+
+4.  Sleep Hours vs Sleep Quality
 
 ```{r}
-
+cleaned_screen_time_data |> 
+  ggplot(aes(x = sleep_hours, y = sleep_quality_1_5)) +
+  geom_point() +
+  labs(
+    x = "Hours of Sleep",
+    y = "Quality of Sleep",
+    title = "Quality of Sleep in Relation to Hours of Sleep "
+  )
 ```
 
-6. Occupation vs Screen Time
+> There doesn't appear to be a clear indication of sleep quality and more sleep, but those with more sleep tend to have more quality. This alone may not be super important, but we can see if those who have low quality of sleep despite having more than 7 hours have other affects that negatively impact sleep quality (ex: screen time)
+
+5.  Work vs Leisure Screen Time
 
 ```{r}
-
+ggplot(cleaned_screen_time_data, aes(x=work_mode, y=leisure_screen_hours)) + 
+  geom_boxplot() 
 ```
 
-7. Exercise Time vs Mental Wellness
+> Hybrid workers have the highest average leisure screen time while remote workers have the lowest. This is interesting as you would think remote workers have access to more distractions than those that work hybrid. Alone it's not necessarily important but it can be used with other information we've gathered
+
+6.  Occupation vs Screen Time
 
 ```{r}
-
+cleaned_screen_time_data |>
+  summarise(avg_screen_time = mean(screen_time_hours), .by = occupation) |>
+  ggplot(aes(x = avg_screen_time, y = occupation)) +
+  geom_col()
 ```
 
-8. Exercise Time vs Stress Level
+> Students have the highest average screen time. We can focus our efforts on students and see if those with high screen time happen to have high stress or low sleep quality/hours. We could also generalize across all occupations, but a focus may provide a more impactful presentation
+
+7.  Exercise Time vs Mental Wellness
 
 ```{r}
-
+cleaned_screen_time_data |>
+  ggplot(aes(x = exercise_minutes_per_week, y = mental_wellness_index_0_100)) + geom_point() + geom_smooth(method = "lm", se = TRUE)
 ```
 
-# Visualizations Using Models
+> There's no clear linear relationship between weekly exercise time and mental wellness. This relationship isn't all that important in regards to screen time, but something interesting we can investigate later on if it becomes relevant
 
-9. Predicting Screen Time Hours *
+8.  Exercise Time vs Stress Level
 
 ```{r}
-
+cleaned_screen_time_data |>
+  mutate(stress_category = case_when(
+    stress_level_0_10 <= 2 ~ "0-2",
+    stress_level_0_10 <= 4 ~ "2-4",
+    stress_level_0_10 <= 6 ~ "4-6",
+    stress_level_0_10 <= 8 ~ "6-8",
+    stress_level_0_10 > 8  ~ "8-10"
+  )) |>
+  summarise(avg_exercise = mean(exercise_minutes_per_week), .by = stress_category) |>
+  ggplot(aes(x = stress_category, y = avg_exercise)) +
+  geom_col()
 ```
+
+> Those with the median stress levels (4-6) appear to have the highest weekly average exercise time. Alone this may not be super important, but may become relevant when we investigate the impacts of stress and if screen time contributes to that (ex: does more screen time and more stress create an unhealthy lifestyle and decrease activity/exercise)
+
+## Visualizations Using Models
+
+9.  Predicting Screen Time Hours
+
+### Correlation Matrix
+
+```{r}
+st_data_without_categories = cleaned_screen_time_data[,c(2, 6, 9:15)]
+st_data_without_categories |> 
+  cor() |> 
+  ggcorrplot()
+```
+
+### Stepwise Regression
+
+```{r}
+st_data_without_st_overlap = cleaned_screen_time_data[,c(2:6, 9:15)]
+model_full = lm(screen_time_hours~., data = st_data_without_st_overlap)
+
+# Optionally add data = T to view process
+ols_step_both_p(model_full) 
+```
+
+```{r}
+predictors = c(
+  "productivity_0_100", 
+  "sleep_quality_1_5", 
+  "stress_level_0_10", 
+  "work_mode", 
+  "social_hours_per_week", 
+  "occupation", 
+  "exercise_minutes_per_week", 
+  "sleep_hours"
+  )
+
+initial_model = lm(
+  formula = reformulate(predictors, response = "screen_time_hours"), 
+  data = st_data_without_st_overlap
+)
+
+summary(initial_model)
+```
+
+> Productivity, sleep quality, stress level, work mode, social hours, occupation, exercise time per week and sleep hours appear to be the most significant features for predicting screen time. We can use this model to investigate what kinds of lifestyles people with high screen time have and later on can see how screen time relates as a predictor of other variables individually
 
 10. Predicting Mental Wellness
 
 ```{r}
+wellness_model <- lm(mental_wellness_index_0_100 ~ exercise_minutes_per_week + 
+                       screen_time_hours + sleep_quality_1_5,
+                     data = cleaned_screen_time_data)
 
+summary(wellness_model)
+# Mental Wellness from 1-100 = 23.56  - 3.67 (screen_time_hours) + 0.027 (exercise_minutes_per_week) + 19.25 (sleep_quality_1_5)
 ```
+
+> Screen time, weekly exercise time and sleep quality are significant predictors of mental wellness. This model will allow us to predict what lifestyle optimizes the best mental wellness and we can modify the model as needed to see if there's other significant predictors
+
+## Groupings
+
+1.  Plots: 1, 5, 6, 9, 10
+
+> This grouping is of all the visuals that relate to screen time. This includes one of our models for predicting screen time as well as supporting visuals to help us describe the interaction with some of the variable and screen time independently. This is likely our main focus for the project
+
+2.  Plots: 2, 7, 10
+
+> This is a grouping of all the visuals that relate to mental wellness. This can be a secondary focus for the project and is likely another one of the most interesting variables to investigate
+
+3.  Plots: 4, 10, 9
+
+> This is grouping is of all the visuals relating to or that use sleep as a variable. The most important thing to note here is that sleep quality is a significant predictor for mental wellness
+
+4.  Plots: 7, 8, 10
+
+> These visuals relate to exercise. They're of lesser importance but some of the information can be used if we're to investigate how exercise impacts screen time or mental wellness later on. Having this insight already prepared allows us to see if this variable is worth considering or looking into
+
+## Overarching Story
+
+> One possible story is screen time negatively impacts mental wellness and productivity because it increases stress; students are the most vulnerable. Using the correlation matrix from the 9th visual, we can see a moderate negative correlation between screen time in regards to mental wellness and productivity while it has a moderate positive correlation with stress. The plots we'd use to prove advance are story are from the first and second grouping. I think it would be smart to first have a visual representation of the correlation matrix in regards to screen time with the strongest correlation because, in my opinion, graphs have more visual impact than colored boxes. After that we can show which groups of people have the most screen time (students as mentioned before) and look into the implications of having too much (impact on life, school, stress, wellness, etc). I think this is a strong point/story we could back with our data and a little research
