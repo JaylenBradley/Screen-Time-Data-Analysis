@@ -1,0 +1,332 @@
+---
+title: "final-data-story"
+date: today
+format: 
+  html:
+    self-contained: true
+    toc: true
+    toc_float: true
+    number_section: false
+    highlight: "tango"
+    theme: "cosmo"
+editor: visual
+editor_options: 
+  chunk_output_type: console
+---
+
+# Data Story
+
+### Load Packages and Data
+
+```{r, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(ggplot2)
+library(ggcorrplot)
+library(olsrr)
+cleaned_screen_time_data = readRDS("./data/cleaned_screen_time_data.rds")
+View(cleaned_screen_time_data)
+```
+
+### Avg Total Screen Time Per Occupation
+
+```{r}
+cleaned_screen_time_data |>
+  summarise(avg_screen_time = mean(screen_time_hours), .by = occupation) |>
+  ggplot(aes(x = avg_screen_time, y = occupation)) +
+  geom_col()
+```
+
+### Boxplots of Leisure Screen Time Per Work Mode
+
+```{r}
+ggplot(cleaned_screen_time_data, aes(x=work_mode, y=leisure_screen_hours)) + 
+  geom_boxplot() 
+```
+
+### Scatterplot of Total Screen Time Hours Against Age
+
+```{r}
+cleaned_screen_time_data |> 
+  ggplot(aes(x = age, y = screen_time_hours)) +
+  geom_point() +
+  labs(
+    x = "Age",
+    y = "Screen Time Hours",
+    title = "Screen Time in Relation to Age"
+  )
+```
+
+### Model 1 - Predicting Screen Time with Correlation Matrix
+
+```{r}
+st_data_without_categories = cleaned_screen_time_data[,c(2, 6, 9:15)]
+st_data_without_categories |> 
+  cor() |> 
+  ggcorrplot()
+```
+
+```{r}
+st_data_without_st_overlap = cleaned_screen_time_data[,c(2:6, 9:15)]
+model_full = lm(screen_time_hours~., data = st_data_without_st_overlap)
+
+# Optionally add data = T to view process
+ols_step_both_p(model_full) 
+```
+
+```{r}
+st_data_without_st_overlap = cleaned_screen_time_data[,c(2:6, 9:15)]
+model_full = lm(screen_time_hours~., data = st_data_without_st_overlap)
+
+# Optionally add data = T to view process
+ols_step_both_p(model_full) ```
+
+predictors = c(
+  "productivity_0_100", 
+  "sleep_quality_1_5", 
+  "stress_level_0_10", 
+  "work_mode", 
+  "social_hours_per_week", 
+  "occupation", 
+  "exercise_minutes_per_week", 
+  "sleep_hours"
+  )
+
+initial_model = lm(
+  formula = reformulate(predictors, response = "screen_time_hours"), 
+  data = st_data_without_st_overlap
+)
+
+summary(initial_model)
+```
+
+### 
+
+```{r}
+wellness_model <- lm(mental_wellness_index_0_100 ~ exercise_minutes_per_week + 
+                       screen_time_hours + sleep_quality_1_5,
+                     data = cleaned_screen_time_data)
+
+summary(wellness_model)
+# Mental Wellness from 1-100 = 23.56  - 3.67 (screen_time_hours) + 0.027 (exercise_minutes_per_week) + 19.25 (sleep_quality_1_5)
+```
+
+### Facet plots of total screen time against all other variables \*
+
+```{r}
+cleaned_screen_time_data |> 
+  pivot_longer(
+    cols = -c(user_id, screen_time_hours, gender, occupation, work_mode, work_screen_hours,    
+              leisure_screen_hours),
+    names_to = "metric",
+    values_to = "value"
+  ) |> 
+  ggplot(aes(x = screen_time_hours, y = value)) +
+    geom_point(alpha = 0.5) + 
+    geom_smooth(method = "lm", color = "red") +
+    facet_wrap(~ metric, scales = "free_y") +
+    theme_minimal()
+```
+
+```{r}
+cleaned_screen_time_data |> 
+  pivot_longer(
+    cols = -c(user_id, screen_time_hours, gender, occupation, work_mode, work_screen_hours,    
+              leisure_screen_hours),
+    names_to = "metric",
+    values_to = "value"
+  ) |> 
+  ggplot(aes(x = screen_time_hours, y = value, color = work_mode)) + 
+  geom_point(alpha = 0.5) +
+  facet_wrap(~ metric, scales = "free_y") +
+  theme_minimal()
+
+
+cleaned_screen_time_data |> 
+  pivot_longer(
+    cols = -c(user_id, screen_time_hours, gender, occupation, work_mode, work_screen_hours,    
+              leisure_screen_hours),
+    names_to = "metric",
+    values_to = "value"
+  ) |> 
+  ggplot(aes(x = screen_time_hours, y = value, color = gender)) + 
+  geom_point(alpha = 0.5) +
+  facet_wrap(~ metric, scales = "free_y") +
+  theme_minimal()
+
+
+cleaned_screen_time_data |> 
+  pivot_longer(
+    cols = -c(user_id, screen_time_hours, gender, occupation, work_mode, work_screen_hours,    
+              leisure_screen_hours),
+    names_to = "metric",
+    values_to = "value"
+  ) |> 
+  ggplot(aes(x = screen_time_hours, y = value, color = occupation)) + 
+  geom_point(alpha = 0.5) +
+  facet_wrap(~ metric, scales = "free_y") +
+  theme_minimal()
+```
+
+> Appears to be a correlation between productivity, stress and mental wellness. Possibly sleep as well. Gender doesn't make a difference. Should evaluate how many people there are within each category (occupation, gender, work_mode) to see if the data is skewed. Might want to use bar plots for categories instead to maake it less confusing. It would seem however that those with remote jobs have more total screen time hours and are more negatively impacted. Might also want to use a column for sleep quality as it's a little difficult to interperet with points, however there appear to be more 1/4 sleep quality points in relation to more screen time hours
+
+### Facet plots of lesiure screen time against all other variables \*
+
+```{r}
+cleaned_screen_time_data |> 
+  pivot_longer(
+    cols = -c(user_id, screen_time_hours, gender, occupation, work_mode, work_screen_hours,    
+              leisure_screen_hours),
+    names_to = "metric",
+    values_to = "value"
+  ) |> 
+  ggplot(aes(x = leisure_screen_hours, y = value)) +
+    geom_point(alpha = 0.5) + 
+    geom_smooth(method = "lm", color = "red") +
+    facet_wrap(~ metric, scales = "free_y") +
+    theme_minimal()
+```
+
+```{r}
+cleaned_screen_time_data |> 
+  pivot_longer(
+    cols = -c(user_id, screen_time_hours, gender, occupation, work_mode, work_screen_hours,    
+              leisure_screen_hours),
+    names_to = "metric",
+    values_to = "value"
+  ) |> 
+  ggplot(aes(x = leisure_screen_hours, y = value, color = work_mode)) + 
+  geom_point(alpha = 0.5) +
+  facet_wrap(~ metric, scales = "free_y") +
+  theme_minimal()
+
+
+cleaned_screen_time_data |> 
+  pivot_longer(
+    cols = -c(user_id, screen_time_hours, gender, occupation, work_mode, work_screen_hours,    
+              leisure_screen_hours),
+    names_to = "metric",
+    values_to = "value"
+  ) |> 
+  ggplot(aes(x = leisure_screen_hours, y = value, color = gender)) + 
+  geom_col(alpha = 0.5) +
+  facet_wrap(~ metric, scales = "free_y") +
+  theme_minimal()
+
+
+cleaned_screen_time_data |> 
+  pivot_longer(
+    cols = -c(user_id, screen_time_hours, gender, occupation, work_mode, work_screen_hours,    
+              leisure_screen_hours),
+    names_to = "metric",
+    values_to = "value"
+  ) |> 
+  ggplot(aes(x = leisure_screen_hours, y = value, color = occupation)) + 
+  geom_point(alpha = 0.5) +
+  facet_wrap(~ metric, scales = "free_y") +
+  theme_minimal()
+```
+
+> Remote workers typically have less leisure screen time compared to those who are hybrid. This makes sense because they're staring at a screen for work already. The negative impacts seem to stay true though compared to total screen time (which would include leisure and work). Students, self-employed, and employed people seem to be the most negatively impacted groups
+
+### Facet plots of work screen time against all other variables \*
+
+```{r}
+cleaned_screen_time_data |> 
+  pivot_longer(
+    cols = -c(user_id, screen_time_hours, gender, occupation, work_mode, work_screen_hours,    
+              leisure_screen_hours),
+    names_to = "metric",
+    values_to = "value"
+  ) |> 
+  ggplot(aes(x = work_screen_hours, y = value)) +
+    geom_point(alpha = 0.5) + 
+    geom_smooth(method = "lm", color = "red") +
+    facet_wrap(~ metric, scales = "free_y") +
+    theme_minimal()
+```
+
+```{r}
+cleaned_screen_time_data |> 
+  pivot_longer(
+    cols = -c(user_id, screen_time_hours, gender, occupation, work_mode, work_screen_hours,    
+              leisure_screen_hours),
+    names_to = "metric",
+    values_to = "value"
+  ) |> 
+  ggplot(aes(x = work_screen_hours, y = value, color = work_mode)) + 
+  geom_point(alpha = 0.5) +
+  facet_wrap(~ metric, scales = "free_y") +
+  theme_minimal()
+
+
+cleaned_screen_time_data |> 
+  pivot_longer(
+    cols = -c(user_id, screen_time_hours, gender, occupation, work_mode, work_screen_hours,    
+              leisure_screen_hours),
+    names_to = "metric",
+    values_to = "value"
+  ) |> 
+  ggplot(aes(x = work_screen_hours, y = value, color = gender)) + 
+  geom_point(alpha = 0.5) +
+  facet_wrap(~ metric, scales = "free_y") +
+  theme_minimal()
+
+
+cleaned_screen_time_data |> 
+  pivot_longer(
+    cols = -c(user_id, screen_time_hours, gender, occupation, work_mode, work_screen_hours,    
+              leisure_screen_hours),
+    names_to = "metric",
+    values_to = "value"
+  ) |> 
+  ggplot(aes(x = work_screen_hours, y = value, color = occupation)) + 
+  geom_point(alpha = 0.5) +
+  facet_wrap(~ metric, scales = "free_y") +
+  theme_minimal()
+```
+
+> Productivity and stress are clearly negatively impacted by screen time. Its a bit harder to tell if that also goes for mental wellness but it would appear so. Same with sleep quality. Would want to re-evaluate with changes noted in the total screen time evaluation
+
+### Plot work screen time against leisure screen time
+
+```{r}
+
+```
+
+### Bar plot of leisure and work screen time for each occupation (shows proportions within each bar)
+
+```{r}
+
+```
+
+### Bar plot of screen time according to age (split by leisure, work and total)
+
+```{r}
+
+```
+
+### Investigate how exercise/social hours (any positives) impact mental wellness when included with screen time (might need a model and to check weights) -\> assuming that screen time negatively impacts mental wellness, does being social or exercising balance it out \* (do the same with stress)
+
+```{r}
+model_mental_wellness = lm(
+  mental_wellness_index_0_100~screen_time_hours, 
+  data = cleaned_screen_time_data)
+
+model_mental_wellness_interaction = lm(
+  mental_wellness_index_0_100~screen_time_hours*exercise_minutes_per_week+screen_time_hours*social_hours_per_week, 
+  data = cleaned_screen_time_data)
+
+model_mental_wellness_interaction_reduced = lm(
+  mental_wellness_index_0_100~screen_time_hours*social_hours_per_week, 
+  data = cleaned_screen_time_data)
+
+summary(model_mental_wellness)
+summary(model_mental_wellness_interaction)
+summary(model_mental_wellness_interaction_reduced)
+```
+
+> Exercise is not a significant predictor so it can be ignored and we can run a test later on if we want to show that in the presentation. The interaction between social hours and screen time hours however IS significant. In the base model, one unit increase in screen time hours (one hour) decreases mental wellness by -5.2020 and this is a significant predictor because the p-val approx 0.001 < 0.05. When looking at the reduced interaction model, social hours and the interaction term with screen time hours is significant and now one unit increase in screen time hours decreases mental wellness by -3.87844 units (not including the interaction coeficcient bc I'm not sure how to interperet it in the grand scheme yet)
+
+# Overarching Story
+
+One possible story is screen time negatively impacts mental wellness and productivity because it increases stress; students are the most vulnerable. Using the correlation matrix from the 9th visual, we can see a moderate negative correlation between screen time in regards to mental wellness and productivity while it has a moderate positive correlation with stress. The plots we'd use to prove advance are story are from the first and second grouping. I think it would be smart to first have a visual representation of the correlation matrix in regards to screen time with the strongest correlation because, in my opinion, graphs have more visual impact than colored boxes. After that we can show which groups of people have the most screen time (students as mentioned before) and look into the implications of having too much (impact on life, school, stress, wellness, etc). I think this is a strong point/story we could back with our data and a little research

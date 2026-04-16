@@ -24,7 +24,7 @@ library(ggplot2)
 library(ggcorrplot)
 library(olsrr)
 cleaned_screen_time_data = readRDS("./data/cleaned_screen_time_data.rds")
-#View(cleaned_screen_time_data)
+View(cleaned_screen_time_data)
 ```
 
 ## Visualizations

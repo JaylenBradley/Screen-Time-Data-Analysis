@@ -1,0 +1,32 @@
+---
+title: "written-report"
+format: html
+editor: visual
+---
+
+# Written Report
+
+### Load Packages and Data
+
+```{r, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(ggplot2)
+library(ggcorrplot)
+library(olsrr)
+cleaned_screen_time_data = readRDS("./data/cleaned_screen_time_data.rds")
+# View(cleaned_screen_time_data)
+```
+
+> Your draft must include a reasonable attempt at each analysis component - exploratory data analysis, inference or modeling, and deriving initial results and conclusions.
+
+## Introduction
+
+> We argue that prolonged screen time can negatively impact a persons productivity, mental wellness, stress, and sleep hours/quality regardless of the type of use (i.e work screen time vs leisure screen time). Being social can counteract some of the negative impacts of screen time on one's mental wellness as well.
+
+## Methodology
+
+> We plotted total screen time, leisure screen time, and work screen time against all other variables and from the plots were able to discern that across all instances that productivity, stress and mental wellness were negatively impacted due to increased screen time exposure. There appears to be some correlation between sleep hours/sleep quality and screen time as well, but this will need to be investigated further. We also created multiple models to see how significant an hour of screen time can impact mental wellness and found that one unit increase in screen time hours (one hour) decreases mental wellness by -5.2020. Additionally, we found that social hours and the interaction term with screen time hours is significant and now one unit increase in screen time hours decreases mental wellness by -3.87844 units
+
+## Results
+
+> 
