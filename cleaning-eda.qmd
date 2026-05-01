@@ -20,7 +20,7 @@ library(tidyverse)
 library(ggplot2)
 
 screen_time_data = read_csv("./data/ScreenTime-vs-MentalWellness.csv")
-View(screen_time_data)
+# View(screen_time_data)
 ```
 
 > Variable names are already cleaned
@@ -132,7 +132,7 @@ write_rds(screen_time_data, "./data/cleaned_screen_time_data.rds")
 ## Investigating & Handling Missing Data
 
 ```{r}
-View(screen_time_data)
+# View(screen_time_data)
 ```
 
 > Fortunately for us, there is no missing data after cleaning, labeling, and reordering. There are a few columns with "0"s as a value, like for exercise_minutes_per_week, but that is a normal data point. It is just good to keep in mind what values our data are for future analysis.

@@ -1,32 +1,206 @@
 ---
-title: "written-report"
-format: html
+title: "Ryan & Jaylen Rough Draft"
+format:
+  pdf:
+    echo: false
 editor: visual
 ---
 
 # Written Report
 
-### Load Packages and Data
+```{r}
+#| message: false
+#| warning: false
 
-```{r, message=FALSE, warning=FALSE}
+library(tinytex)
 library(tidyverse)
 library(ggplot2)
 library(ggcorrplot)
 library(olsrr)
 cleaned_screen_time_data = readRDS("./data/cleaned_screen_time_data.rds")
-# View(cleaned_screen_time_data)
 ```
-
-> Your draft must include a reasonable attempt at each analysis component - exploratory data analysis, inference or modeling, and deriving initial results and conclusions.
 
 ## Introduction
 
-> We argue that prolonged screen time can negatively impact a persons productivity, mental wellness, stress, and sleep hours/quality regardless of the type of use (i.e work screen time vs leisure screen time). Being social can counteract some of the negative impacts of screen time on one's mental wellness as well.
+> Today, screens dominate our lives. People live with phones in their pockets, computers on their desks, and televisions in their homes. We sought to investigate the impact that screen time has our lives, through metrics like reported productivity, mental wellness, stress, and sleep quality.
+
+## Exploratory Data Analysis
+
+### Who Uses Screens the Most?
+
+We begin by examining which occupational groups accumulate the highest average screen time, as this helps us identify the populations most at risk. The graph below shows that students have the highest average screen time, following by employed and then self employed individuals.
+
+```{r}
+cleaned_screen_time_data |>
+  summarise(avg_screen_time = mean(screen_time_hours), .by = occupation) |>
+  ggplot(aes(x = avg_screen_time, y = occupation)) +
+  geom_col(fill = "darkgreen") +
+  labs(
+    x = "Average Screen Time (Hours)",
+    y = "Occupation",
+    title = "Average Screen Time by Occupation"
+  )
+```
+
+To understand whether screen time skews more toward work or leisure within each occupation, we analyzed the proportional breakdown below. Counter intuitively, employed individuals have a higher percentage of leisure screen time, while retired individuals have a larger percentage of work screen time, comparatively. While we didn't have additional data to investigate this relationship, it provides interesting background and context.
+
+```{r}
+cleaned_screen_time_data |>
+  select(occupation, work_screen_hours, leisure_screen_hours) |>
+  pivot_longer(
+    cols = c(work_screen_hours, leisure_screen_hours),
+    names_to = "screen_type",
+    values_to = "hours"
+  ) |>
+  summarise(avg_hours = mean(hours), .by = c(occupation, screen_type)) |>
+  ggplot(aes(x = occupation, y = avg_hours, fill = screen_type)) +
+  geom_col(position = "fill") +
+  scale_y_continuous(labels = scales::percent) +
+  labs(
+    x = "Occupation",
+    y = "Proportion of Screen Time",
+    fill = "Screen Type",
+    title = "Proportion of Work vs Leisure Screen Time by Occupation"
+  ) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+### How Do Work and Leisure Screen Time Relate?
+
+Next, we examine whether individuals who spend more time on screens for work also tend to spend more time on screens for leisure, or whether the two types of usage trade off against each other.
+
+```{r}
+cleaned_screen_time_data |>
+  ggplot(aes(x = work_screen_hours, y = leisure_screen_hours)) +
+  geom_point(alpha = 0.4) +
+  geom_smooth(method = "lm", se = FALSE, colour = "steelblue") +
+  labs(
+    x = "Work Screen Time (Hours)",
+    y = "Leisure Screen Time (Hours)",
+    title = "Work Screen Time vs Leisure Screen Time"
+  )
+```
+
+### Does Work Mode Affect Leisure Screen Time?
+
+We also consider whether a person's work mode (remote, hybrid, or in-person) influences how much leisure screen time they accumulate outside of work.
+
+```{r}
+ggplot(cleaned_screen_time_data, aes(x = work_mode, y = leisure_screen_hours)) +
+  geom_boxplot() +
+  labs(
+    x = "Work Mode",
+    y = "Leisure Screen Time (Hours)",
+    title = "Leisure Screen Time by Work Mode"
+  )
+```
+
+### Does Screen Time Vary with Age?
+
+We examine how total screen time is distributed across ages to identify any age-related patterns.
+
+```{r}
+cleaned_screen_time_data |>
+  ggplot(aes(x = age, y = screen_time_hours)) +
+  geom_point() +
+  labs(
+    x = "Age",
+    y = "Screen Time Hours",
+    title = "Screen Time in Relation to Age"
+  )
+```
+
+Breaking this down further, we split screen time by type (work, leisure, and total) across age groups.
+
+```{r}
+cleaned_screen_time_data |>
+  select(age, work_screen_hours, leisure_screen_hours, screen_time_hours) |>
+  pivot_longer(
+    cols = c(work_screen_hours, leisure_screen_hours, screen_time_hours),
+    names_to = "screen_type",
+    values_to = "hours"
+  ) |>
+  summarise(avg_hours = mean(hours), .by = c(age, screen_type)) |>
+  ggplot(aes(x = age, y = avg_hours, fill = screen_type)) +
+  geom_col(position = "dodge") +
+  labs(
+    x = "Age",
+    y = "Average Screen Time (Hours)",
+    fill = "Screen Type",
+    title = "Average Screen Time by Age"
+  )
+```
+
+### Correlation Between Screen Time and Wellbeing Variables
+
+Having established how screen time is distributed across groups, we now look at how it relates to other numeric variables in the dataset using a correlation matrix.
+
+```{r}
+st_data_without_categories = cleaned_screen_time_data[,c(2, 6, 9:15)]
+st_data_without_categories |>
+  cor() |>
+  ggcorrplot()
+```
 
 ## Methodology
 
-> We plotted total screen time, leisure screen time, and work screen time against all other variables and from the plots were able to discern that across all instances that productivity, stress and mental wellness were negatively impacted due to increased screen time exposure. There appears to be some correlation between sleep hours/sleep quality and screen time as well, but this will need to be investigated further. We also created multiple models to see how significant an hour of screen time can impact mental wellness and found that one unit increase in screen time hours (one hour) decreases mental wellness by -5.2020. Additionally, we found that social hours and the interaction term with screen time hours is significant and now one unit increase in screen time hours decreases mental wellness by -3.87844 units
+> We plotted total screen time, leisure screen time, and work screen time against all other variables and from the plots were able to discern that across all instances that productivity, stress and mental wellness were negatively impacted due to increased screen time exposure. There appears to be some correlation between sleep hours/sleep quality and screen time as well, but this will need to be investigated further. We also created multiple models to see how significant an hour of screen time can impact mental wellness and found that one unit increase in screen time hours (one hour) decreases mental wellness by -5.2020. Additionally, we found that social hours and the interaction term with screen time hours is significant and now one unit increase in screen time hours decreases mental wellness by -3.87844 units.
+
+## Inference & Modelling
+
+### Identifying Predictors of Screen Time
+
+To understand what drives overall screen time, we use stepwise regression to identify the most significant predictors from the full set of available variables.
+
+```{r}
+st_data_without_st_overlap = cleaned_screen_time_data[,c(2:6, 9:15)]
+model_full = lm(screen_time_hours~., data = st_data_without_st_overlap)
+
+# Optionally add data = T to view process
+ols_step_both_p(model_full)
+```
+
+Using the variables selected by the stepwise procedure, we fit an initial model to quantify each predictor's contribution.
+
+```{r}
+predictors = c(
+  "productivity_0_100",
+  "sleep_quality_1_5",
+  "stress_level_0_10",
+  "work_mode",
+  "social_hours_per_week",
+  "occupation",
+  "exercise_minutes_per_week",
+  "sleep_hours"
+  )
+
+initial_model = lm(
+  formula = reformulate(predictors, response = "screen_time_hours"),
+  data = st_data_without_st_overlap
+)
+
+summary(initial_model)
+```
+
+### Impact of Screen Time on Mental Wellness
+
+With screen time predictors established, we now model the outcome of greatest interest: mental wellness. The baseline model includes screen time, exercise, and sleep quality as predictors.
+
+```{r}
+wellness_model <- lm(mental_wellness_index_0_100 ~ exercise_minutes_per_week +
+                       screen_time_hours + sleep_quality_1_5,
+                     data = cleaned_screen_time_data)
+
+summary(wellness_model)
+# Mental Wellness from 1-100 = 23.56  - 3.67 (screen_time_hours) + 0.027 (exercise_minutes_per_week) + 19.25 (sleep_quality_1_5)
+```
 
 ## Results
 
-> 
+> Screen time negatively impacts mental wellness. Each additional hour of screen time is associated with a 3.67 point decrease in mental wellness (on a 0–100 scale), even after controlling for exercise and sleep quality. While there is certainly a baseline amount of screen time that is "mandatory" to operate in society (i.e. texting your family, using email, navigation, etc.), the more a person can decrease their screen time, the better it will be for their mental wellbeing, generally.
+
+> Students and remote workers are most at risk for excessive screen time. The occupation and work mode plots show these groups accumulate the highest overall screen time, making them the most exposed to its negative effects. Any potential solutions to the overarching screen time problem that plagues the country might be best suited to students to derive the most impact.
+
+> Social activity can partially buffer the harmful affects of screen time. When social hours and its interaction with screen time are added to the wellness model, the negative effect of screen time shifts to −3.87, which suggesting socialising helps but does not fully offset the impact.
+
+> Stress and productivity are also affected by screen time. The correlation matrix shows screen time has a moderate positive correlation with stress and a moderate negative correlation with productivity, supporting the broader argument beyond just mental wellness.
